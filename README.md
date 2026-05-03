@@ -1,13 +1,14 @@
-# Cloud Services Assignment 1
+# Cloud Services
 
 A cloud services application that uploads images and performs text translation using AWS services.
 
 ## Features
 
 - **File Upload**: Upload files to AWS S3 using boto3
+- - **AWS Recognition**: Detects what ever is in the image using AWS Rekognition
 - **Translation**: Translate text using AWS Translate service
 - **Text-to-Speech**: Convert text to speech using AWS Polly
-- **Speech Recognition**: Recognize speech from audio files using AWS Rekognition
+
 
 ## Prerequisites
 
