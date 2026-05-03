@@ -1,9 +1,10 @@
 import boto3
+from .aws_config import AWS_REGION
 
 
 class StorageService:
     def __init__(self, storage_location):
-        self.client = boto3.client('s3')
+        self.client = boto3.client('s3', region_name=AWS_REGION)
         self.bucket_name = storage_location
 
     def get_storage_location(self):

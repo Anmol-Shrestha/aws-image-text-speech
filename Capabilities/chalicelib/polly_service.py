@@ -14,6 +14,7 @@ Design decision:
 """
 
 import boto3
+from .aws_config import AWS_REGION
 
 
 class PollyService:
@@ -23,7 +24,7 @@ class PollyService:
     DEFAULT_FORMAT = "mp3"
 
     def __init__(self):
-        self.client = boto3.client("polly")
+        self.client = boto3.client("polly", region_name=AWS_REGION)
 
     def synthesize(
         self,

@@ -1,9 +1,10 @@
 import boto3
+from .aws_config import AWS_REGION
 
 
 class TranslationService:
     def __init__(self):
-        self.client = boto3.client('translate')
+        self.client = boto3.client('translate', region_name=AWS_REGION)
 
     def translate_text(self, text, source_language = 'auto', target_language = 'en'):
         response = self.client.translate_text(
