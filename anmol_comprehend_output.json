@@ -1,0 +1,53 @@
+{
+    "Entities": [
+        {
+            "Score": 0.9451828002929688,
+            "Type": "PERSON",
+            "Text": "Anmol",
+            "BeginOffset": 0,
+            "EndOffset": 5
+        },
+        {
+            "Score": 0.8202850222587585,
+            "Type": "OTHER",
+            "Text": "anmolstha777@gmail.com",
+            "BeginOffset": 6,
+            "EndOffset": 28
+        },
+        {
+            "Score": 0.9755104184150696,
+            "Type": "OTHER",
+            "Text": "(437) 662 1377",
+            "BeginOffset": 29,
+            "EndOffset": 43
+        },
+        {
+            "Score": 0.5774939060211182,
+            "Type": "LOCATION",
+            "Text": "Main Street",
+            "BeginOffset": 44,
+            "EndOffset": 55
+        },
+        {
+            "Score": 0.5143969655036926,
+            "Type": "LOCATION",
+            "Text": "M3E1R7",
+            "BeginOffset": 56,
+            "EndOffset": 62
+        },
+        {
+            "Score": 0.5381001830101013,
+            "Type": "LOCATION",
+            "Text": "Toronto",
+            "BeginOffset": 63,
+            "EndOffset": 70
+        },
+        {
+            "Score": 0.7284731864929199,
+            "Type": "ORGANIZATION",
+            "Text": "Ontario Centennial College",
+            "BeginOffset": 71,
+            "EndOffset": 97
+        }
+    ]
+}
