@@ -1,0 +1,105 @@
+# Cloud Services Assignment 1
+
+A cloud services application that uploads images and performs text translation using AWS services.
+
+## Features
+
+- **File Upload**: Upload files to AWS S3 using boto3
+- **Translation**: Translate text using AWS Translate service
+- **Text-to-Speech**: Convert text to speech using AWS Polly
+- **Speech Recognition**: Recognize speech from audio files using AWS Rekognition
+
+## Prerequisites
+
+- Python 3.11+
+- AWS Account with credentials configured
+- Docker (for containerized deployment)
+
+## Installation
+
+```bash
+make install
+```
+
+## Running Tests Locally
+
+```bash
+# Run tests
+make test
+
+# Run tests with verbose output
+make test-verbose
+
+# Run tests with coverage report
+make test-coverage
+```
+
+## Project Structure
+
+```
+.
+├── Capabilities/
+│   ├── app.py                    # Main Chalice application
+│   ├── chalicelib/               # Service implementations
+│   │   ├── polly_service.py      # Text-to-speech service
+│   │   ├── translation_service.py # Translation service
+│   │   ├── recognition_service.py # Speech recognition service
+│   │   └── storage_service.py    # S3 storage service
+│   └── requirements.txt
+├── testing/
+│   ├── utest_translation.py      # Unit tests
+│   └── [service implementations]
+├── anmol_filesupload.py          # File upload script
+└── Makefile                      # Build automation
+```
+
+## AWS Services Used
+
+- **AWS S3**: File storage
+- **AWS Translate**: Text translation
+- **AWS Polly**: Text-to-speech conversion
+- **AWS Rekognition**: Image/speech recognition
+
+## Docker
+
+Build and run the application in a Docker container:
+
+```bash
+# Build Docker image
+make docker-build
+
+# Run tests in Docker
+make docker-run
+```
+
+## CI/CD Pipeline
+
+This project uses GitHub Actions for continuous integration with:
+- Automated test execution
+- Code quality checks (pylint, black, isort)
+- Security scanning (bandit, safety)
+- Docker image building
+- Coverage reporting
+
+See `.github/workflows/ci.yml` for workflow configuration.
+
+## Make Targets
+
+- `make help` - Display all available targets
+- `make install` - Install dependencies
+- `make test` - Run tests
+- `make test-verbose` - Run tests with verbose output
+- `make test-coverage` - Run tests with coverage report
+- `make lint` - Run linting checks
+- `make format` - Format code with black
+- `make clean` - Clean build artifacts
+- `make docker-build` - Build Docker image
+- `make docker-run` - Run application in Docker
+
+## License
+
+MIT
+
+## Author
+
+Anmol Sagar Shrestha
