@@ -15,5 +15,12 @@ class StorageService:
                                Body = file_bytes,
                                Key = file_name)
 
+        # Generate a signed URL valid for 1 hour
+        signed_url = self.client.generate_presigned_url(
+            'get_object',
+            Params={'Bucket': self.bucket_name, 'Key': file_name},
+            ExpiresIn=3600
+        )
+
         return {'fileId': file_name,
-                'fileUrl': "http://" + self.bucket_name + ".s3.amazonaws.com/" + file_name}
+                'fileUrl': signed_url}
