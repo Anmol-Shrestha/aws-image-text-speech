@@ -22,10 +22,24 @@ A cloud services application that uploads images and performs text translation u
 make install
 ```
 
-## Running Tests Locally
+## Local Development Workflow
+
+### Step 1: Set Up AWS Credentials
 
 ```bash
-# Run tests
+# Configure AWS credentials (one-time setup)
+aws configure
+
+# Or set environment variables
+export AWS_ACCESS_KEY_ID=your_key
+export AWS_SECRET_ACCESS_KEY=your_secret
+export AWS_REGION=us-east-1
+```
+
+### Step 2: Run Tests Locally (Quick Feedback)
+
+```bash
+# Run tests (fast - 2-5 seconds)
 make test
 
 # Run tests with verbose output
@@ -34,6 +48,35 @@ make test-verbose
 # Run tests with coverage report
 make test-coverage
 ```
+
+### Step 3: Build and Run Docker Locally
+
+```bash
+# Build Docker image (validates Docker build works locally)
+make docker-build
+
+# Run the Chalice API in Docker (production-like environment)
+make docker-run
+```
+
+The API will be available at `http://localhost:8000`
+
+**Test the API:**
+```bash
+curl http://localhost:8000/
+```
+
+### Step 4: Push to GitHub (Triggers CI/CD)
+
+```bash
+git push origin main
+```
+
+CI/CD will:
+- ✅ Run tests automatically
+- ✅ Build Docker image in clean Linux environment  
+- ✅ Run security scans
+- ✅ Report results on GitHub
 
 ## Project Structure
 
@@ -86,16 +129,46 @@ The API will be available at `http://localhost:8000`
 make docker-run
 ```
 
+## Deploying to Production
+
+### Deploy to AWS Lambda
+
+```bash
+cd Capabilities
+chalice deploy
+```
+
+This will:
+- 📦 Package your application
+- ☁️ Create AWS Lambda functions
+- 🌐 Set up API Gateway endpoints
+- 🚀 Deploy to AWS
+
+Chalice will output your API URL. You can then access it from anywhere!
+
+### Before Deploying
+
+1. ✅ Tests pass locally: `make test`
+2. ✅ Docker builds locally: `make docker-build`
+3. ✅ GitHub Actions CI/CD passes (all checks green)
+4. ✅ AWS credentials configured: `aws configure`
+
 ## CI/CD Pipeline
 
 This project uses GitHub Actions for continuous integration with:
 - Automated test execution
 - Code quality checks (pylint, black, isort)
 - Security scanning (bandit, safety)
-- Docker image building
+- Multi-stage Docker build (tests run during build)
 - Coverage reporting
 
 See `.github/workflows/ci.yml` for workflow configuration.
+
+**How it works:**
+1. Push code → GitHub Actions runs automatically
+2. Tests fail → Build stops, you fix it
+3. Tests pass → Docker image built successfully
+4. All checks pass → Ready to deploy
 
 ## Make Targets
 
