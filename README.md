@@ -117,7 +117,7 @@ CI/CD will:
 │   ├── chalicelib/               # Service implementations
 │   │   ├── polly_service.py      # Text-to-speech service
 │   │   ├── translation_service.py # Translation service
-│   │   ├── recognition_service.py # Speech recognition service
+│   │   ├── recognition_service.py # Image Recognition service
 │   │   └── storage_service.py    # S3 storage service
 │   └── requirements.txt
 ├── testing/
