@@ -8,15 +8,35 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
+    <script
+      async
+      crossorigin="anonymous"
+      data-clerk-publishable-key="pk_test_ZXhvdGljLXNjdWxwaW4tOTUuY2xlcmsuYWNjb3VudHMuZGV2JA"
+      src="https://exotic-sculpin-95.clerk.accounts.dev/npm/@clerk/clerk-js@latest/dist/clerk.browser.js"
+      type="text/javascript"
+    ></script>
 </head>
 <body>
     <div class="background-glow"></div>
 
     <div class="container">
+        <!-- Auth Section -->
+        <div id="authContainer" style="display: none; text-align: center; padding: 2rem; margin-bottom: 2rem; background: rgba(255,255,255,0.05); border-radius: 12px;">
+            <p style="color: var(--text-muted); margin-bottom: 1rem;">Please sign in to use Pictorial Translate</p>
+            <button id="signInBtn" class="btn btn-primary" style="cursor: pointer;">Sign In</button>
+        </div>
+
+        <!-- Main App Section (hidden until auth) -->
+        <div id="appContainer" style="display: none;">
         <!-- Header -->
         <header class="header">
-            <h1 class="title">Pictorial Translate</h1>
-            <p class="subtitle">Transform text in images, instantly</p>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <div>
+                    <h1 class="title">Pictorial Translate</h1>
+                    <p class="subtitle">Transform text in images, instantly</p>
+                </div>
+                <button id="signOutBtn" class="btn btn-secondary" style="cursor: pointer; white-space: nowrap;">Sign Out</button>
+            </div>
         </header>
 
         <!-- Main Content -->
@@ -85,6 +105,7 @@
             <!-- Error Message -->
             <div class="error-message" id="errorMessage" style="display: none;"></div>
         </main>
+        </div>
     </div>
 
     <script src="scripts.js"></script>

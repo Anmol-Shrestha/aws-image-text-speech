@@ -1,7 +1,53 @@
 "use strict";
 
-const serverUrl = "https://v9c90wf7fj.execute-api.us-east-1.amazonaws.com/api";
+const serverUrl = "https://5331wxmfna.execute-api.us-east-1.amazonaws.com/api";
 let currentImageData = null;
+
+//####
+// Clerk Auth
+//####
+async function initClerk() {
+    if (!window.Clerk) {
+        console.error("Clerk script failed to load");
+        return;
+    }
+
+    await Clerk.load();
+    updateAuthUI();
+
+    Clerk.addListener(({ user }) => {
+        updateAuthUI();
+    });
+}
+
+function updateAuthUI() {
+    const authContainer = document.getElementById("authContainer");
+    const appContainer = document.getElementById("appContainer");
+    const signInBtn = document.getElementById("signInBtn");
+    const signOutBtn = document.getElementById("signOutBtn");
+
+    if (Clerk.user) {
+        authContainer.style.display = "none";
+        appContainer.style.display = "block";
+    } else {
+        authContainer.style.display = "block";
+        appContainer.style.display = "none";
+    }
+
+    if (signInBtn) {
+        signInBtn.addEventListener("click", () => Clerk.redirectToSignIn());
+    }
+    if (signOutBtn) {
+        signOutBtn.addEventListener("click", () => Clerk.signOut(() => location.href = "/"));
+    }
+}
+
+async function getAuthToken() {
+    if (!Clerk.user) {
+        throw new Error("Not authenticated");
+    }
+    return await Clerk.session.getToken();
+}
 
 function showError(message) {
     const errorElem = document.getElementById("errorMessage");
@@ -32,11 +78,13 @@ async function uploadImage(file) {
             const encodedString = reader.result.toString().replace(/^data:(.*,)?/, '');
 
             try {
+                const token = await getAuthToken();
                 const response = await fetch(serverUrl + "/images", {
                     method: "POST",
                     headers: {
                         'Accept': 'application/json',
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
                     },
                     body: JSON.stringify({filename: file.name, filebytes: encodedString})
                 });
@@ -73,11 +121,13 @@ async function translateImage(imageData) {
     startScanner();
 
     try {
+        const token = await getAuthToken();
         const response = await fetch(serverUrl + "/images/" + imageData["fileId"] + "/translate-text", {
             method: "POST",
             headers: {
                 'Accept': 'application/json',
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify({fromLang: "auto", toLang: "en"})
         });
@@ -198,7 +248,21 @@ function setupEventListeners() {
     resetBtn.addEventListener("click", handleReset);
 }
 
-document.addEventListener("DOMContentLoaded", setupEventListeners);
+async function waitForClerk() {
+    let attempts = 0;
+    while (!window.Clerk && attempts < 50) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        attempts++;
+    }
+    if (!window.Clerk) {
+        console.error("Clerk failed to load");
+        return;
+    }
+    await initClerk();
+    setupEventListeners();
+}
+
+document.addEventListener("DOMContentLoaded", waitForClerk);
 
 class HttpError extends Error {
     constructor(response) {

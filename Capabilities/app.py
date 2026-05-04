@@ -1,10 +1,12 @@
-from chalice import Chalice
+from chalice import Chalice, UnauthorizedError
 from chalicelib import storage_service
 from chalicelib import recognition_service
 from chalicelib import translation_service
+from chalicelib import auth_service
 
 import base64
 import json
+from functools import wraps
 
 #####
 # chalice app configuration
@@ -22,9 +24,24 @@ translation_service = translation_service.TranslationService()
 
 
 #####
+# Auth decorator
+#####
+def require_auth(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        auth_header = app.current_request.headers.get('authorization', '')
+        if not auth_header.startswith('Bearer '):
+            raise UnauthorizedError("Missing or invalid authorization token")
+        token = auth_header[7:]
+        auth_service.verify_token(token)
+        return func(*args, **kwargs)
+    return wrapper
+
+#####
 # RESTful endpoints
 #####
 @app.route('/images', methods = ['POST'], cors = True)
+@require_auth
 def upload_image():
     """processes file upload and saves file to storage service"""
     request_data = json.loads(app.current_request.raw_body)
@@ -37,6 +54,7 @@ def upload_image():
 
 
 @app.route('/images/{image_id}/translate-text', methods = ['POST'], cors = True)
+@require_auth
 def translate_image_text(image_id):
     """detects then translates text in the specified image"""
     request_data = json.loads(app.current_request.raw_body)
