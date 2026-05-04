@@ -112,14 +112,20 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build Docker image
+      - name: Build Docker image (with tests)
         run: |
-          docker build -t anmol-assignment1:${{ github.sha }} .
-          docker build -t anmol-assignment1:latest .
-
-      - name: Test Docker image
-        run: |
-          docker run --rm anmol-assignment1:latest
+          docker build \
+            --build-arg AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} \
+            --build-arg AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
+            --build-arg AWS_REGION=${{ secrets.AWS_REGION || 'us-east-1' }} \
+            --target production \
+            -t anmol-assignment1:${{ github.sha }} .
+          docker build \
+            --build-arg AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} \
+            --build-arg AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
+            --build-arg AWS_REGION=${{ secrets.AWS_REGION || 'us-east-1' }} \
+            --target production \
+            -t anmol-assignment1:latest .
 
   claude-code-review:
     name: Claude Code Review
