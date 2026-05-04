@@ -44,4 +44,8 @@ docker-build:
 	docker build -t anmol-assignment1:latest .
 
 docker-run:
-	docker run -it --rm -e AWS_PROFILE=default -v ~/.aws:/root/.aws anmol-assignment1:latest make test
+	docker run -it --rm \
+		-e AWS_PROFILE=default \
+		-v ~/.aws:/root/.aws \
+		-p 8000:8000 \
+		anmol-assignment1:latest

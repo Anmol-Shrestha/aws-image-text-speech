@@ -66,10 +66,23 @@ make test-coverage
 Build and run the application in a Docker container:
 
 ```bash
-# Build Docker image
+# Build Docker image (includes running tests)
 make docker-build
 
-# Run tests in Docker
+# Run the Chalice API in Docker with AWS credentials
+docker run -it --rm \
+  -e AWS_ACCESS_KEY_ID=your_key \
+  -e AWS_SECRET_ACCESS_KEY=your_secret \
+  -e AWS_REGION=us-east-1 \
+  -p 8000:8000 \
+  anmol-assignment1:latest
+```
+
+The API will be available at `http://localhost:8000`
+
+**Using make:**
+```bash
+# Run with local AWS credentials
 make docker-run
 ```
 
