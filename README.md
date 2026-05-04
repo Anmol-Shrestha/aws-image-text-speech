@@ -2,6 +2,12 @@
 
 A cloud services application that uploads images and performs text translation using AWS services.
 
+## Overview
+
+![Pictorial Translate - Application Demo](./Output.png)
+
+The application features a modern, glassmorphic interface with neon accent colors. Users can upload images, automatically detect text using AWS Rekognition, translate it to English using AWS Translate, and view results in a beautiful split-view layout.
+
 ## Features
 
 - **File Upload**: Upload files to AWS S3 using boto3
