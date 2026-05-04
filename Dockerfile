@@ -41,5 +41,8 @@ COPY . .
 
 ENV PYTHONUNBUFFERED=1
 
-# Default command for production
-CMD ["python", "anmol_filesupload.py"]
+WORKDIR /app/Capabilities
+
+# Run Chalice local server for development/testing
+# For production AWS Lambda, use: chalice deploy
+CMD ["chalice", "local", "--host", "0.0.0.0", "--port", "8000"]
