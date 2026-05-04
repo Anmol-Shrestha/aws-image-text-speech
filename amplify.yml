@@ -1,0 +1,14 @@
+version: 1
+applications:
+  - appRoot: website
+    env: {}
+    jobs:
+      build:
+        commands:
+          - echo "Building static website"
+    artifacts:
+      baseDirectory: website
+      files:
+        - '**/*'
+    cache:
+      paths: []
