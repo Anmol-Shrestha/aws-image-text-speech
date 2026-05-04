@@ -2,11 +2,12 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-COPY requirements.txt Capabilities/requirements.txt ./
+COPY requirements.txt test-requirements.txt ./
+COPY Capabilities/requirements.txt ./Capabilities/
 
 RUN pip install --no-cache-dir -r requirements.txt && \
     pip install --no-cache-dir -r Capabilities/requirements.txt && \
-    pip install --no-cache-dir pytest pytest-cov
+    pip install --no-cache-dir -r test-requirements.txt
 
 COPY . .
 
