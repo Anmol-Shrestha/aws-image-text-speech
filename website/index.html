@@ -1,43 +1,92 @@
-<!doctype html>
-<html lang="en"/>
-
+<!DOCTYPE html>
+<html lang="en">
 <head>
-    <meta charset="utf-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-
-    <title>Pictorial Translator</title>
-
-    <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
-    <link rel="stylesheet" href="https://www.w3schools.com/lib/w3-theme-blue-grey.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pictorial Translate - Image Text Translation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
 </head>
+<body>
+    <div class="background-glow"></div>
 
-<body class="w3-theme-14">
-    <div style="min-width:400px">
-        <div class="w3-bar w3-large w3-theme-d4">
-            <span class="w3-bar-item">Pictorial Translator</span>
-        </div>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1 class="title">Pictorial Translate</h1>
+            <p class="subtitle">Transform text in images, instantly</p>
+        </header>
 
-        <div class="w3-container w3-content">
-            <p class="w3-opacity"><b>Upload</b></p>
-            <input id="file" type="file" name="file" accept="image/*"/>
-            <input class="w3-button w3-blue-grey" type="submit" value="Upload"
-                   onclick="uploadAndTranslate()"/>
-
-            <p class="w3-opacity"><b>Image</b></p>
-            <div id="view" class="w3-panel w3-white w3-card w3-display-container"
-                 style="display:none;">
-                <div style="float: left;">
-                    <img id="image" width="600"/>
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Upload Section -->
+            <section class="upload-section">
+                <div class="upload-card">
+                    <div class="upload-zone" id="uploadZone">
+                        <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path d="M12 2v20m-7-7l7-7 7 7M5 12h14" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                        <p class="upload-text">Drag & drop your image here</p>
+                        <p class="upload-subtext">or click to select</p>
+                        <input
+                            type="file"
+                            id="file"
+                            class="file-input"
+                            accept="image/*"
+                            style="display: none;"
+                        >
+                    </div>
                 </div>
-                <div style="float: right;">
-                    <h5>Translated Text:</h5>
-                    <div id="translations"/>
+            </section>
+
+            <!-- Results Section -->
+            <section class="results-section" id="resultsSection" style="display: none;">
+                <div class="results-card">
+                    <!-- Scanner Effect -->
+                    <div class="scanner-container" id="scannerContainer">
+                        <div class="scanner-line"></div>
+                    </div>
+
+                    <!-- Image Preview -->
+                    <div class="results-grid">
+                        <div class="result-column">
+                            <h3 class="result-heading">Original Image</h3>
+                            <div class="image-container">
+                                <img id="image" class="preview-image" alt="Uploaded image">
+                            </div>
+                        </div>
+
+                        <!-- Divider -->
+                        <div class="divider"></div>
+
+                        <!-- Translations -->
+                        <div class="result-column">
+                            <h3 class="result-heading">Translated Text</h3>
+                            <div class="translations-container" id="translations">
+                                <p class="loading-text">Processing...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="button-group">
+                        <button class="btn btn-primary" id="translateBtn">
+                            <span class="btn-text">Translate</span>
+                        </button>
+                        <button class="btn btn-secondary" id="resetBtn">
+                            <span class="btn-text">Upload New</span>
+                        </button>
+                    </div>
                 </div>
-            </div>
-        </div>
+            </section>
+
+            <!-- Error Message -->
+            <div class="error-message" id="errorMessage" style="display: none;"></div>
+        </main>
     </div>
 
     <script src="scripts.js"></script>
 </body>
-
 </html>

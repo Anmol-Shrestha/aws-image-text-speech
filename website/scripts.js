@@ -1,95 +1,204 @@
 "use strict";
 
-
 const serverUrl = "https://v9c90wf7fj.execute-api.us-east-1.amazonaws.com/api";
+let currentImageData = null;
 
-async function uploadImage() {
-    // encode input file as base64 string for upload
-    let file = document.getElementById("file").files[0];
-    let converter = new Promise(function(resolve, reject) {
-        const reader = new FileReader();
+function showError(message) {
+    const errorElem = document.getElementById("errorMessage");
+    errorElem.textContent = message;
+    errorElem.style.display = "block";
+}
+
+function hideError() {
+    const errorElem = document.getElementById("errorMessage");
+    errorElem.style.display = "none";
+}
+
+function startScanner() {
+    const scannerContainer = document.getElementById("scannerContainer");
+    scannerContainer.classList.add("active");
+}
+
+function stopScanner() {
+    const scannerContainer = document.getElementById("scannerContainer");
+    scannerContainer.classList.remove("active");
+}
+
+async function uploadImage(file) {
+    const reader = new FileReader();
+
+    return new Promise((resolve, reject) => {
+        reader.onload = async () => {
+            const encodedString = reader.result.toString().replace(/^data:(.*,)?/, '');
+
+            try {
+                const response = await fetch(serverUrl + "/images", {
+                    method: "POST",
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({filename: file.name, filebytes: encodedString})
+                });
+
+                if (response.ok) {
+                    const imageData = await response.json();
+                    currentImageData = imageData;
+                    resolve(imageData);
+                } else {
+                    throw new HttpError(response);
+                }
+            } catch (error) {
+                reject(error);
+            }
+        };
+
+        reader.onerror = () => reject(new Error("Failed to read file"));
         reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result
-            .toString().replace(/^data:(.*,)?/, ''));
-        reader.onerror = (error) => reject(error);
     });
-    let encodedString = await converter;
-
-    // clear file upload input field
-    document.getElementById("file").value = "";
-
-    // make server call to upload image
-    // and return the server upload promise
-    return fetch(serverUrl + "/images", {
-        method: "POST",
-        headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({filename: file.name, filebytes: encodedString})
-    }).then(response => {
-        if (response.ok) {
-            return response.json();
-        } else {
-            throw new HttpError(response);
-        }
-    })
 }
 
-function updateImage(image) {
-    document.getElementById("view").style.display = "block";
+function updateImage(imageData) {
+    const resultsSection = document.getElementById("resultsSection");
+    const imageElem = document.getElementById("image");
 
-    let imageElem = document.getElementById("image");
-    imageElem.src = image["fileUrl"];
-    imageElem.alt = image["fileId"];
+    imageElem.src = imageData["fileUrl"];
+    imageElem.alt = imageData["fileId"];
+    resultsSection.style.display = "block";
 
-    return image;
+    return imageData;
 }
 
-function translateImage(image) {
-    // make server call to translate image
-    // and return the server upload promise
-    return fetch(serverUrl + "/images/" + image["fileId"] + "/translate-text", {
-        method: "POST",
-        headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({fromLang: "auto", toLang: "en"})
-    }).then(response => {
+async function translateImage(imageData) {
+    startScanner();
+
+    try {
+        const response = await fetch(serverUrl + "/images/" + imageData["fileId"] + "/translate-text", {
+            method: "POST",
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({fromLang: "auto", toLang: "en"})
+        });
+
         if (response.ok) {
-            return response.json();
+            const translations = await response.json();
+            stopScanner();
+            return translations;
         } else {
+            stopScanner();
             throw new HttpError(response);
         }
-    })
+    } catch (error) {
+        stopScanner();
+        throw error;
+    }
 }
 
 function annotateImage(translations) {
-    let translationsElem = document.getElementById("translations");
-    while (translationsElem.firstChild) {
-        translationsElem.removeChild(translationsElem.firstChild);
+    const translationsElem = document.getElementById("translations");
+    translationsElem.innerHTML = "";
+
+    if (!Array.isArray(translations) || translations.length === 0) {
+        translationsElem.innerHTML = '<p style="color: var(--text-muted);">No text detected in image</p>';
+        return;
     }
-    translationsElem.clear
+
     for (let i = 0; i < translations.length; i++) {
-        let translationElem = document.createElement("h6");
-        translationElem.appendChild(document.createTextNode(
-            translations[i]["text"] + " -> " + translations[i]["translation"]["translatedText"]
-        ));
-        translationsElem.appendChild(document.createElement("hr"));
-        translationsElem.appendChild(translationElem);
+        const translation = translations[i];
+        const itemDiv = document.createElement("div");
+        itemDiv.className = "translation-item";
+
+        const originalDiv = document.createElement("div");
+        originalDiv.className = "translation-original";
+        originalDiv.textContent = translation["text"];
+
+        const arrowDiv = document.createElement("div");
+        arrowDiv.className = "translation-arrow";
+        arrowDiv.textContent = "↓";
+
+        const translatedDiv = document.createElement("div");
+        translatedDiv.className = "translation-translated";
+        translatedDiv.textContent = translation["translation"]["translatedText"];
+
+        itemDiv.appendChild(originalDiv);
+        itemDiv.appendChild(arrowDiv);
+        itemDiv.appendChild(translatedDiv);
+        translationsElem.appendChild(itemDiv);
     }
 }
 
-function uploadAndTranslate() {
-    uploadImage()
-        .then(image => updateImage(image))
-        .then(image => translateImage(image))
+function handleFileSelect(file) {
+    hideError();
+
+    uploadImage(file)
+        .then(imageData => updateImage(imageData))
+        .catch(error => {
+            showError("Error uploading image: " + error.message);
+            console.error(error);
+        });
+}
+
+function handleTranslate() {
+    if (!currentImageData) {
+        showError("Please upload an image first");
+        return;
+    }
+
+    hideError();
+    translateImage(currentImageData)
         .then(translations => annotateImage(translations))
         .catch(error => {
-            alert("Error: " + error);
-        })
+            showError("Error translating image: " + error.message);
+            console.error(error);
+        });
 }
+
+function handleReset() {
+    currentImageData = null;
+    document.getElementById("file").value = "";
+    document.getElementById("resultsSection").style.display = "none";
+    hideError();
+    stopScanner();
+}
+
+function setupEventListeners() {
+    const uploadZone = document.getElementById("uploadZone");
+    const fileInput = document.getElementById("file");
+    const translateBtn = document.getElementById("translateBtn");
+    const resetBtn = document.getElementById("resetBtn");
+
+    uploadZone.addEventListener("click", () => fileInput.click());
+
+    fileInput.addEventListener("change", (e) => {
+        if (e.target.files.length > 0) {
+            handleFileSelect(e.target.files[0]);
+        }
+    });
+
+    uploadZone.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        uploadZone.classList.add("dragover");
+    });
+
+    uploadZone.addEventListener("dragleave", () => {
+        uploadZone.classList.remove("dragover");
+    });
+
+    uploadZone.addEventListener("drop", (e) => {
+        e.preventDefault();
+        uploadZone.classList.remove("dragover");
+        if (e.dataTransfer.files.length > 0) {
+            handleFileSelect(e.dataTransfer.files[0]);
+        }
+    });
+
+    translateBtn.addEventListener("click", handleTranslate);
+    resetBtn.addEventListener("click", handleReset);
+}
+
+document.addEventListener("DOMContentLoaded", setupEventListeners);
 
 class HttpError extends Error {
     constructor(response) {
