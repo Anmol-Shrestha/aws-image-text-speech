@@ -1,7 +1,7 @@
 "use strict";
 
 
-const serverUrl = "https://v9c90wf7fj.execute-api.us-east-1.amazonaws.com/api/";
+const serverUrl = "https://v9c90wf7fj.execute-api.us-east-1.amazonaws.com/api";
 
 async function uploadImage() {
     // encode input file as base64 string for upload
