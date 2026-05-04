@@ -46,3 +46,21 @@ htmlcov/
 # Test reports
 coverage.xml
 bandit-report.json
+
+# Temporary test files
+anmol*.txt
+anmol*.py
+anmol*.json
+anmol*.docx
+
+# Experimental code
+labcode/
+
+# Dependency manager files (use requirements.txt instead)
+Pipfile
+Pipfile.lock
+
+# Chalice deployment artifacts
+.chalice/deployed/
+.chalice/config.json
+.chalice/policy-*
