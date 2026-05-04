@@ -66,7 +66,31 @@ The API will be available at `http://localhost:8000`
 curl http://localhost:8000/
 ```
 
-### Step 4: Push to GitHub (Triggers CI/CD)
+### Step 4: Test the Website (Optional)
+
+Test the frontend with your production API:
+
+```bash
+# Terminal 1: Start local web server
+cd website
+python -m http.server 8001
+
+# Terminal 2: Open browser to
+http://localhost:8001/index.html
+```
+
+**Why HTTP server is needed:**
+- ❌ Opening `index.html` directly (file://) blocks API requests for security
+- ✅ HTTP server (http://localhost:8001) allows cross-origin requests
+- The production API has CORS enabled, so it accepts requests from localhost
+
+**What the website does:**
+1. Upload an image to S3
+2. Detect text in the image (AWS Rekognition)
+3. Translate detected text (AWS Translate)
+4. Display translated results
+
+### Step 5: Push to GitHub (Triggers CI/CD)
 
 ```bash
 git push origin main
@@ -137,6 +161,8 @@ make docker-run
 cd Capabilities
 chalice deploy
 ```
+
+Your production URL:                                                                                                                                     https://v9c90wf7fj.execute-api.us-east-1.amazonaws.com/api/
 
 This will:
 - 📦 Package your application
