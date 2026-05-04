@@ -4,10 +4,6 @@
   "stages": {
     "dev": {
       "autogen_policy": false,
-      "api_gateway_stage": "api"
-    },
-    "test-auth": {
-      "autogen_policy": false,
       "api_gateway_stage": "api",
       "environment_variables": {
         "CLERK_JWKS_URL": "https://exotic-sculpin-95.clerk.accounts.dev/.well-known/jwks.json"

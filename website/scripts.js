@@ -1,6 +1,6 @@
 "use strict";
 
-const serverUrl = "https://5331wxmfna.execute-api.us-east-1.amazonaws.com/api";
+const serverUrl = "https://v9c90wf7fj.execute-api.us-east-1.amazonaws.com/api";
 let currentImageData = null;
 
 //####
