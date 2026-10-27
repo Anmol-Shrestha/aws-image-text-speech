@@ -1,6 +1,6 @@
 "use strict";
 
-const serverUrl = "https://v9c90wf7fj.execute-api.us-east-1.amazonaws.com/api";
+const serverUrl = "https://daouy3bkla.execute-api.us-east-1.amazonaws.com/api";
 let currentImageData = null;
 
 //####
@@ -23,7 +23,8 @@ async function initClerk() {
 function updateAuthUI() {
     const authContainer = document.getElementById("authContainer");
     const appContainer = document.getElementById("appContainer");
-    const signInBtn = document.getElementById("signInBtn");
+    // Landing buttons live in the shadow root of authContainer
+    const signInBtns = authContainer.shadowRoot.querySelectorAll("[data-sign-in]");
     const signOutBtn = document.getElementById("signOutBtn");
 
     if (Clerk.user) {
@@ -34,9 +35,9 @@ function updateAuthUI() {
         appContainer.style.display = "none";
     }
 
-    if (signInBtn) {
-        signInBtn.addEventListener("click", () => Clerk.redirectToSignIn());
-    }
+    signInBtns.forEach(button => {
+        button.addEventListener("click", () => Clerk.redirectToSignIn());
+    });
     if (signOutBtn) {
         signOutBtn.addEventListener("click", () => Clerk.signOut(() => location.href = "/"));
     }
@@ -205,6 +206,45 @@ function handleTranslate() {
         });
 }
 
+async function synthesizeSpeech(text) {
+    const token = await getAuthToken();
+    const response = await fetch(serverUrl + "/speech", {
+        method: "POST",
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({text: text})
+    });
+
+    if (!response.ok) {
+        throw new HttpError(response);
+    }
+    const data = await response.json();
+    return data["audio"];
+}
+
+function handleListen() {
+    // Read the translated lines currently shown on the page
+    const translatedText = Array.from(document.querySelectorAll(".translation-translated"))
+        .map(elem => elem.textContent)
+        .join(". ");
+
+    if (!translatedText) {
+        showError("Translate an image first");
+        return;
+    }
+
+    hideError();
+    synthesizeSpeech(translatedText)
+        .then(audio => new Audio("data:audio/mpeg;base64," + audio).play())
+        .catch(error => {
+            showError("Error generating speech: " + error.message);
+            console.error(error);
+        });
+}
+
 function handleReset() {
     currentImageData = null;
     document.getElementById("file").value = "";
@@ -218,6 +258,7 @@ function setupEventListeners() {
     const fileInput = document.getElementById("file");
     const translateBtn = document.getElementById("translateBtn");
     const resetBtn = document.getElementById("resetBtn");
+    const listenBtn = document.getElementById("listenBtn");
 
     uploadZone.addEventListener("click", () => fileInput.click());
 
@@ -245,6 +286,7 @@ function setupEventListeners() {
     });
 
     translateBtn.addEventListener("click", handleTranslate);
+    listenBtn.addEventListener("click", handleListen);
     resetBtn.addEventListener("click", handleReset);
 }
 

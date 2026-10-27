@@ -6,7 +6,7 @@
     <title>Pictorial Translate - Image Text Translation</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <script
       async
@@ -19,15 +19,392 @@
 <body>
     <div class="background-glow"></div>
 
-    <div class="container">
-        <!-- Auth Section -->
-        <div id="authContainer" style="display: none; text-align: center; padding: 2rem; margin-bottom: 2rem; background: rgba(255,255,255,0.05); border-radius: 12px;">
-            <p style="color: var(--text-muted); margin-bottom: 1rem;">Please sign in to use Pictorial Translate</p>
-            <button id="signInBtn" class="btn btn-primary" style="cursor: pointer;">Sign In</button>
-        </div>
+    <!-- Landing page markup and styles. The script below mounts this in a shadow root,
+         so app styles from styles.css can't reach it, and its styles can't leak out. -->
+    <template id="landing-template">
+        <style>
+            .landing-page,
+            .landing-page * {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
 
-        <!-- Main App Section (hidden until auth) -->
-        <div id="appContainer" style="display: none;">
+            .landing-page {
+                all: initial;
+                display: block;
+                --l-bg: #07080f;
+                --l-surface: rgba(20, 24, 38, 0.6);
+                --l-border: rgba(255, 255, 255, 0.08);
+                --l-primary: #38bdf8;
+                --l-glow: rgba(56, 189, 248, 0.3);
+                --l-text: #f8fafc;
+                --l-muted: #94a3b8;
+                --l-font: 'Archivo', sans-serif;
+                --l-mono: 'IBM Plex Mono', monospace;
+                background-color: var(--l-bg);
+                color: var(--l-text);
+                font-family: var(--l-font);
+                font-size: 16px;
+                line-height: 1.5;
+                min-height: 100vh;
+                position: relative;
+            }
+
+            /* Canvas Particle Background */
+            .landing-canvas {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                pointer-events: none;
+                z-index: 1;
+            }
+
+            .landing-container {
+                position: relative;
+                z-index: 2;
+                width: 100%;
+                margin: 0;
+                padding: 7rem clamp(1.25rem, 4vw, 4rem) 2rem;
+                display: flex;
+                flex-direction: column;
+                min-height: 100vh;
+            }
+
+            .landing-header {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                z-index: 10;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 1rem clamp(1.25rem, 4vw, 4rem);
+                background: rgba(7, 8, 15, 0.7);
+                backdrop-filter: blur(14px);
+                -webkit-backdrop-filter: blur(14px);
+                border-bottom: 1px solid var(--l-border);
+            }
+
+            .landing-logo {
+                font-weight: 600;
+                font-size: 1.25rem;
+                letter-spacing: -0.02em;
+                background: linear-gradient(135deg, #fff 30%, var(--l-muted));
+                -webkit-background-clip: text;
+                background-clip: text;
+                -webkit-text-fill-color: transparent;
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
+
+            .landing-badge {
+                font-family: var(--l-mono);
+                font-size: 0.7rem;
+                background: rgba(56, 189, 248, 0.1);
+                color: var(--l-primary);
+                padding: 0.25rem 0.6rem;
+                border-radius: 0;
+                border: 1px solid rgba(56, 189, 248, 0.2);
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+            }
+
+            .landing-btn {
+                --l-sweep: var(--l-primary);
+                position: relative;
+                isolation: isolate;
+                overflow: hidden;
+                background: var(--l-text);
+                color: var(--l-bg);
+                font-family: var(--l-font);
+                font-weight: 700;
+                font-size: 1rem;
+                padding: 0.75rem 1.5rem;
+                border-radius: 0;
+                border: none;
+                cursor: pointer;
+                transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+                box-shadow: none;
+            }
+
+            /* Colored layer that slides in from the left on hover */
+            .landing-btn::before {
+                content: '';
+                position: absolute;
+                inset: 0;
+                z-index: -1;
+                background: linear-gradient(100deg, #7dd3fc 0%, var(--l-sweep) 45%, #2563eb 100%);
+                transform: translateX(-101%);
+                transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+            }
+
+            .landing-btn:hover {
+                transform: translateY(-2px);
+                box-shadow: none;
+            }
+
+            .landing-btn:hover::before {
+                transform: translateX(0);
+            }
+
+            .landing-btn:focus-visible {
+                outline: 2px solid var(--l-primary);
+                outline-offset: 3px;
+            }
+
+            .landing-hero {
+                text-align: center;
+                max-width: 800px;
+                margin: 0 auto 6rem auto;
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+            }
+
+            /* Glitching Multilingual Headline */
+            .landing-glitch {
+                font-size: clamp(2rem, 5vw, 3.75rem);
+                font-weight: 500;
+                line-height: 1.1;
+                margin-bottom: 1.5rem;
+                letter-spacing: -0.03em;
+                min-height: 140px;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+            }
+
+            .landing-glitch-text {
+                position: relative;
+                display: inline-block;
+                color: #fff;
+            }
+
+            .landing-glitch-text.landing-glitch-active {
+                animation: landing-glitch-anim 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+                color: var(--l-primary);
+            }
+
+            @keyframes landing-glitch-anim {
+                0% { transform: translate(0); }
+                20% { transform: translate(-3px, 2px); text-shadow: 2px 0 #ff0055, -2px 0 #00ffff; }
+                40% { transform: translate(-2px, -2px); text-shadow: -2px 0 #ff0055, 2px 0 #00ffff; }
+                60% { transform: translate(3px, 1px); text-shadow: 1px 2px #ff0055, -1px -2px #00ffff; }
+                80% { transform: translate(1px, -1px); text-shadow: none; }
+                100% { transform: translate(0); }
+            }
+
+            .landing-subtitle {
+                font-size: 1.125rem;
+                color: var(--l-muted);
+                line-height: 1.6;
+                margin-bottom: 2.5rem;
+                max-width: 600px;
+            }
+
+            .landing-features {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+                gap: 1.5rem;
+                margin-bottom: 6rem;
+            }
+
+            .landing-card {
+                background: var(--l-surface);
+                border: 1px solid var(--l-border);
+                backdrop-filter: blur(16px);
+                padding: 2rem;
+                border-radius: 0;
+                text-align: left;
+                transition: transform 0.3s ease, border-color 0.3s ease;
+            }
+
+            .landing-card:hover {
+                transform: translateY(-4px);
+                border-color: rgba(56, 189, 248, 0.3);
+            }
+
+            .landing-num {
+                font-family: var(--l-mono);
+                font-size: 0.85rem;
+                color: var(--l-primary);
+                margin-bottom: 1rem;
+                display: block;
+            }
+
+            .landing-card h3 {
+                font-size: 1.25rem;
+                margin-bottom: 0.75rem;
+                font-weight: 500;
+            }
+
+            .landing-card p {
+                color: var(--l-muted);
+                font-size: 0.95rem;
+                line-height: 1.5;
+            }
+
+            /* Scroll-driven product demo: a tall track with a sticky stage inside */
+            .landing-demo {
+                position: relative;
+                height: 300vh;
+                margin-bottom: 4rem;
+            }
+
+            .landing-demo-stage {
+                position: sticky;
+                top: 0;
+                height: 100vh;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                gap: 1.25rem;
+            }
+
+            .landing-demo-frame {
+                position: relative;
+                width: 100%;
+                aspect-ratio: 1440 / 788;
+                border: 1px solid var(--l-border);
+                overflow: hidden;
+                background: #000;
+            }
+
+            .landing-demo-video {
+                display: block;
+                width: 100%;
+                height: 100%;
+            }
+
+            /* The spotlight is a transparent box whose huge shadow darkens everything outside it */
+            .landing-demo-spot {
+                position: absolute;
+                border: 1px solid var(--l-primary);
+                pointer-events: none;
+                box-shadow: 0 0 0 100vmax rgba(7, 8, 15, 0.78);
+            }
+
+            @media (prefers-reduced-motion: reduce) {
+                .landing-demo { height: auto; }
+                .landing-demo-stage { position: static; height: auto; }
+                .landing-demo-spot { display: none; }
+            }
+
+            /* Cursor ring that follows the mouse (moved with transform in the script) */
+            .landing-cursor {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 36px;
+                height: 36px;
+                border: 1px solid #38bdf8;
+                border-radius: 50%;
+                background-color: #38bdf8;
+                /* Inverts the colors beneath it, so text stays readable over any background */
+                mix-blend-mode: difference;
+                pointer-events: none;
+                z-index: 20;
+                transition: width 0.25s ease, height 0.25s ease;
+            }
+
+            .landing-cursor.is-hovering {
+                width: 64px;
+                height: 64px;
+            }
+
+            @media (hover: none), (prefers-reduced-motion: reduce) {
+                .landing-cursor { display: none; }
+            }
+
+            .landing-footer {
+                text-align: center;
+                padding: 2rem 0;
+                color: var(--l-muted);
+                font-size: 0.875rem;
+                border-top: 1px solid var(--l-border);
+            }
+
+            @media (max-width: 768px) {
+                .landing-glitch { min-height: 120px; }
+            }
+        </style>
+
+        <div class="landing-page">
+            <!-- Interactive Particle Background Canvas -->
+            <canvas id="bg-canvas" class="landing-canvas"></canvas>
+            <div class="landing-cursor" aria-hidden="true"></div>
+
+            <div class="landing-container">
+                <!-- Header -->
+                <header class="landing-header">
+                    <div class="landing-logo">
+                        <span>Pictorial Translate</span>
+                        <span class="landing-badge">Beta</span>
+                    </div>
+                    <button class="landing-btn" data-sign-in>Sign In</button>
+                </header>
+
+                <!-- Hero Section -->
+                <main class="landing-hero">
+                    <div class="landing-glitch">
+                        <span id="greeting-text" class="landing-glitch-text">Hi, Welcome</span>
+                    </div>
+                    <p class="landing-subtitle">
+                        Upload a photo of a sign, menu, or label. Pictorial Translate finds the printed text, translates it into English, and reads it aloud.
+                    </p>
+                    <button class="landing-btn" id="see-demo" style="font-size: 1.1rem; padding: 1rem 2rem;">See the Demo &darr;</button>
+                </main>
+
+                <!-- Features Grid -->
+                <section class="landing-features">
+                    <div class="landing-card">
+                        <span class="landing-num">01 / UPLOAD</span>
+                        <h3>Upload a Photo</h3>
+                        <p>Drag and drop an image of a sign, menu, or label, or choose one from your files.</p>
+                    </div>
+                    <div class="landing-card">
+                        <span class="landing-num">02 / TRANSLATE</span>
+                        <h3>Find and Translate Text</h3>
+                        <p>Amazon Rekognition finds the text in your photo, and Amazon Translate converts it into English.</p>
+                    </div>
+                    <div class="landing-card">
+                        <span class="landing-num">03 / LISTEN</span>
+                        <h3>Listen</h3>
+                        <p>Play the English translation aloud with Amazon Polly, a text-to-speech service.</p>
+                    </div>
+                </section>
+
+                <!-- Product demo: scroll moves the video, the spotlight follows the active control -->
+                <section class="landing-demo" id="landing-demo">
+                    <div class="landing-demo-stage">
+                        <div class="landing-demo-frame">
+                            <video class="landing-demo-video" src="demo.mp4" muted playsinline preload="auto" aria-label="Demo of Pictorial Translate"></video>
+                            <div class="landing-demo-spot" id="demo-spot"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Footer -->
+                <footer class="landing-footer">
+                    <p>&copy; 2026 Pictorial Translate. Private Invite-Only Beta.</p>
+                </footer>
+            </div>
+        </div>
+    </template>
+
+    <!-- Auth Section: landing page shown to signed-out visitors (content mounted by the script below) -->
+    <div id="authContainer" style="display: none; width: 100%; min-height: 100vh;"></div>
+
+    <!-- Main App Section (hidden until auth). The container class is on this element, so hiding it removes its padding too. -->
+    <div id="appContainer" class="container" style="display: none;">
         <!-- Header -->
         <header class="header">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
@@ -95,6 +472,9 @@
                         <button class="btn btn-primary" id="translateBtn">
                             <span class="btn-text">Translate</span>
                         </button>
+                        <button class="btn btn-secondary" id="listenBtn">
+                            <span class="btn-text">Listen</span>
+                        </button>
                         <button class="btn btn-secondary" id="resetBtn">
                             <span class="btn-text">Upload New</span>
                         </button>
@@ -105,8 +485,222 @@
             <!-- Error Message -->
             <div class="error-message" id="errorMessage" style="display: none;"></div>
         </main>
-        </div>
     </div>
+
+    <script>
+        // Mount the landing page in a shadow root so no app styles reach it
+        (() => {
+            const landingRoot = document
+                .getElementById('authContainer')
+                .attachShadow({ mode: 'open' });
+            landingRoot.appendChild(
+                document.getElementById('landing-template').content.cloneNode(true)
+            );
+
+            // Multilingual welcome greetings for the landing page
+            const greetings = [
+                "Hi, Welcome to Pictorial Translate",
+                "Bonjour, Bienvenue",
+                "Hola, Bienvenido",
+                "Konnichiwa, ようこそ",
+                "Guten Tag, Willkommen",
+                "Ciao, Benvenuto"
+            ];
+
+            let currentIndex = 0;
+            const greetingElement = landingRoot.getElementById('greeting-text');
+
+            function updateGreeting() {
+                greetingElement.classList.add('landing-glitch-active');
+
+                setTimeout(() => {
+                    currentIndex = (currentIndex + 1) % greetings.length;
+                    greetingElement.textContent = greetings[currentIndex];
+                }, 200);
+
+                setTimeout(() => {
+                    greetingElement.classList.remove('landing-glitch-active');
+                }, 400);
+            }
+
+            setInterval(updateGreeting, 3000);
+
+            // Interactive constellation particle canvas
+            const canvas = landingRoot.getElementById('bg-canvas');
+            const ctx = canvas.getContext('2d');
+
+            let width, height;
+            let particles = [];
+
+            function resize() {
+                width = canvas.width = window.innerWidth;
+                height = canvas.height = window.innerHeight;
+            }
+
+            window.addEventListener('resize', resize);
+            resize();
+
+            class Particle {
+                constructor() {
+                    this.x = Math.random() * width;
+                    this.y = Math.random() * height;
+                    this.vx = (Math.random() - 0.5) * 0.6;
+                    this.vy = (Math.random() - 0.5) * 0.6;
+                    this.radius = Math.random() * 1.5 + 0.5;
+                }
+
+                update() {
+                    this.x += this.vx;
+                    this.y += this.vy;
+
+                    if (this.x < 0 || this.x > width) this.vx *= -1;
+                    if (this.y < 0 || this.y > height) this.vy *= -1;
+                }
+
+                draw() {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(56, 189, 248, 0.4)';
+                    ctx.fill();
+                }
+            }
+
+            // Particle density based on screen size
+            const particleCount = Math.min(window.innerWidth > 768 ? 70 : 35, 100);
+            for (let i = 0; i < particleCount; i++) {
+                particles.push(new Particle());
+            }
+
+            function animate() {
+                ctx.clearRect(0, 0, width, height);
+
+                for (let i = 0; i < particles.length; i++) {
+                    particles[i].update();
+                    particles[i].draw();
+
+                    // Connect nearby particles with faint lines
+                    for (let j = i + 1; j < particles.length; j++) {
+                        const dx = particles[i].x - particles[j].x;
+                        const dy = particles[i].y - particles[j].y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+
+                        if (dist < 130) {
+                            ctx.beginPath();
+                            ctx.moveTo(particles[i].x, particles[i].y);
+                            ctx.lineTo(particles[j].x, particles[j].y);
+                            ctx.strokeStyle = `rgba(56, 189, 248, ${0.12 * (1 - dist / 130)})`;
+                            ctx.lineWidth = 0.8;
+                            ctx.stroke();
+                        }
+                    }
+                }
+
+                requestAnimationFrame(animate);
+            }
+
+            animate();
+
+            // Scroll-driven product demo
+            const demoSection = landingRoot.getElementById('landing-demo');
+            const demoVideo = landingRoot.querySelector('.landing-demo-video');
+            const demoSpot = landingRoot.getElementById('demo-spot');
+            const DEMO_WIDTH = 1440;
+            const DEMO_HEIGHT = 788;
+
+            // Each step runs until its video time (seconds) and highlights one area, in video pixels
+            const demoSteps = [
+                { until: 4, rect: null },
+                { until: 14, rect: { x: 468, y: 637, w: 166, h: 50 } },
+                { until: 26, rect: { x: 750, y: 207, w: 408, h: 400 } },
+                { until: Infinity, rect: { x: 651, y: 637, w: 124, h: 50 } }
+            ];
+
+            // Convert a video-pixel rectangle to percentages of the frame, with a small margin
+            function toPercent(rect) {
+                const pad = 8;
+                return {
+                    left: ((rect.x - pad) / DEMO_WIDTH) * 100,
+                    top: ((rect.y - pad) / DEMO_HEIGHT) * 100,
+                    width: ((rect.w + pad * 2) / DEMO_WIDTH) * 100,
+                    height: ((rect.h + pad * 2) / DEMO_HEIGHT) * 100
+                };
+            }
+
+            landingRoot.getElementById('see-demo').addEventListener('click', () => {
+                demoSection.scrollIntoView({ behavior: 'smooth' });
+            });
+
+            if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                demoVideo.controls = true;
+            } else {
+                demoVideo.pause();
+
+                // Current spotlight position, eased toward the target each frame
+                let spot = { left: 0, top: 0, width: 100, height: 100 };
+
+                function scrollToTime() {
+                    const rect = demoSection.getBoundingClientRect();
+                    const scrollable = demoSection.offsetHeight - window.innerHeight;
+                    const progress = Math.min(Math.max(-rect.top / scrollable, 0), 1);
+                    return progress * demoVideo.duration;
+                }
+
+                function updateDemo() {
+                    // Skip while the landing page is hidden (signed-in users)
+                    if (demoVideo.duration && demoSection.offsetParent) {
+                        const time = scrollToTime();
+                        if (Math.abs(demoVideo.currentTime - time) > 0.04) {
+                            demoVideo.currentTime = time;
+                        }
+
+                        const step = demoSteps.find(s => time < s.until) || demoSteps[demoSteps.length - 1];
+                        const target = step.rect ? toPercent(step.rect) : { left: 0, top: 0, width: 100, height: 100 };
+
+                        spot.left += (target.left - spot.left) * 0.15;
+                        spot.top += (target.top - spot.top) * 0.15;
+                        spot.width += (target.width - spot.width) * 0.15;
+                        spot.height += (target.height - spot.height) * 0.15;
+
+                        demoSpot.style.left = spot.left + '%';
+                        demoSpot.style.top = spot.top + '%';
+                        demoSpot.style.width = spot.width + '%';
+                        demoSpot.style.height = spot.height + '%';
+                        demoSpot.style.borderColor = step.rect ? '' : 'transparent';
+                        demoSpot.style.boxShadow = step.rect
+                            ? '0 0 0 100vmax rgba(7, 8, 15, 0.78)'
+                            : '0 0 0 100vmax rgba(7, 8, 15, 0)';
+                    }
+
+                    requestAnimationFrame(updateDemo);
+                }
+
+                updateDemo();
+            }
+
+            // Cursor ring: eases toward the mouse position and grows over interactive elements
+            const cursor = landingRoot.querySelector('.landing-cursor');
+            let mouseX = 0, mouseY = 0, cursorX = 0, cursorY = 0;
+
+            window.addEventListener('mousemove', e => {
+                mouseX = e.clientX;
+                mouseY = e.clientY;
+            });
+
+            function followCursor() {
+                cursorX += (mouseX - cursorX) * 0.2;
+                cursorY += (mouseY - cursorY) * 0.2;
+                cursor.style.transform = `translate(${cursorX}px, ${cursorY}px) translate(-50%, -50%)`;
+                requestAnimationFrame(followCursor);
+            }
+
+            followCursor();
+
+            landingRoot.querySelectorAll('.landing-btn, .landing-card').forEach(element => {
+                element.addEventListener('mouseenter', () => cursor.classList.add('is-hovering'));
+                element.addEventListener('mouseleave', () => cursor.classList.remove('is-hovering'));
+            });
+        })();
+    </script>
 
     <script src="scripts.js"></script>
 </body>
