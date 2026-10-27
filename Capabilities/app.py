@@ -1,7 +1,8 @@
-from chalice import Chalice, UnauthorizedError
+from chalice import Chalice, UnauthorizedError, BadRequestError
 from chalicelib import storage_service
 from chalicelib import recognition_service
 from chalicelib import translation_service
+from chalicelib import polly_service
 from chalicelib import auth_service
 
 import base64
@@ -17,10 +18,11 @@ app.debug = True
 #####
 # services initialization
 #####
-storage_location = 'contentcen301364068.aws.ai'
+storage_location = 'pictorial-translate-anmol-545009864085'
 storage_service = storage_service.StorageService(storage_location)
 recognition_service = recognition_service.RecognitionService(storage_service)
 translation_service = translation_service.TranslationService()
+polly_service = polly_service.PollyService()
 
 
 #####
@@ -77,3 +79,21 @@ def translate_image_text(image_id):
             })
 
     return translated_lines
+
+
+@app.route('/speech', methods = ['POST'], cors = True)
+@require_auth
+def synthesize_speech():
+    """converts text to speech and returns the MP3 audio as base64"""
+    request_data = json.loads(app.current_request.raw_body)
+    text = request_data['text'].strip()
+
+    if not text:
+        raise BadRequestError("Text is required")
+    if len(text) > 3000:
+        raise BadRequestError("Text must be 3000 characters or fewer")
+
+    audio_bytes = polly_service.synthesize(text)
+
+    return {'audio': base64.b64encode(audio_bytes).decode('utf-8'),
+            'contentType': 'audio/mpeg'}

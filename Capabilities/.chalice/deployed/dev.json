@@ -3,19 +3,19 @@
     {
       "name": "api_handler_role",
       "resource_type": "iam_role",
-      "role_arn": "arn:aws:iam::657083456632:role/Capabilities-dev-api_handler",
+      "role_arn": "arn:aws:iam::545009864085:role/Capabilities-dev-api_handler",
       "role_name": "Capabilities-dev-api_handler"
     },
     {
       "name": "api_handler",
       "resource_type": "lambda_function",
-      "lambda_arn": "arn:aws:lambda:us-east-1:657083456632:function:Capabilities-dev"
+      "lambda_arn": "arn:aws:lambda:us-east-1:545009864085:function:Capabilities-dev"
     },
     {
       "name": "rest_api",
       "resource_type": "rest_api",
-      "rest_api_id": "v9c90wf7fj",
-      "rest_api_url": "https://v9c90wf7fj.execute-api.us-east-1.amazonaws.com/api/"
+      "rest_api_id": "daouy3bkla",
+      "rest_api_url": "https://daouy3bkla.execute-api.us-east-1.amazonaws.com/api/"
     }
   ],
   "schema_version": "2.0",

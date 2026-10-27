@@ -12,7 +12,8 @@
     "translate:*",
     "translate:TranslateText",
     "rekognition:DetectText",
-    "comprehend:DetectDominantLanguage"
+    "comprehend:DetectDominantLanguage",
+    "polly:SynthesizeSpeech"
     ],
     "Resource": "*"
     }
