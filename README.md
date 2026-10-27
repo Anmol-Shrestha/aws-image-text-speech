@@ -1,219 +1,144 @@
-# Cloud Services
+# Pictorial Translate
 
-A cloud services application that uploads images and performs text translation using AWS services.
+Upload a photo of a sign, menu, or label. Pictorial Translate finds the printed text, translates it into English, and reads it aloud.
 
-## Overview
+**Live site:** https://main.dvsybtsoulkw3.amplifyapp.com
+**Access:** invite-only. Sign-in is handled by Clerk.
 
-![Pictorial Translate - Application Demo](./Output.png)
+![Pictorial Translate](./Output.png)
 
-The application features a modern, glassmorphic interface with neon accent colors. Users can upload images, automatically detect text using AWS Rekognition, translate it to English using AWS Translate, and view results in a beautiful split-view layout.
+## How it works
 
-## Features
+1. **Upload:** the image is saved to S3 under a generated key, so the user's file name never reaches S3 or the URL.
+2. **Find text:** Amazon Rekognition detects text lines. Lines below 80% confidence are dropped.
+3. **Translate:** Amazon Translate converts each line to English, with the source language detected automatically.
+4. **Listen:** Amazon Polly reads the translation aloud with the standard English voice.
 
-- **File Upload**: Upload files to AWS S3 using boto3
-- - **AWS Recognition**: Detects what ever is in the image using AWS Rekognition
-- **Translation**: Translate text using AWS Translate service
-- **Text-to-Speech**: Convert text to speech using AWS Polly
-
-
-## Prerequisites
-
-- Python 3.11+
-- AWS Account with credentials configured
-- Docker (for containerized deployment)
-
-## Installation
-
-```bash
-make install
+```
+Browser (Clerk sign-in) ──> Amplify (static site) ──> API Gateway ──> Lambda (Chalice)
+                                                                         │
+                                                  S3 · Rekognition · Translate · Polly
 ```
 
-## Local Development Workflow
+## API
 
-### Step 1: Set Up AWS Credentials
+Every route requires a Clerk session token in the `Authorization: Bearer <token>` header. Requests without a valid token get `401`.
 
-```bash
-# Configure AWS credentials (one-time setup)
-aws configure
+| Method | Route | Purpose |
+|--------|-------|---------|
+| `POST` | `/images` | Upload an image (`filename`, base64 `filebytes`). Returns `fileId` and a 1-hour signed `fileUrl`. |
+| `POST` | `/images/{image_id}/translate-text` | Detect and translate the text in an uploaded image. |
+| `POST` | `/speech` | Convert text to speech. Returns base64 MP3. Limited to 3,000 characters. |
 
-# Or set environment variables
-export AWS_ACCESS_KEY_ID=your_key
-export AWS_SECRET_ACCESS_KEY=your_secret
-export AWS_REGION=us-east-1
-```
+Uploads accept JPG, JPEG, and PNG only, since those are the formats Rekognition reads.
 
-### Step 2: Run Tests Locally (Quick Feedback)
-
-```bash
-# Run tests (fast - 2-5 seconds)
-make test
-
-# Run tests with verbose output
-make test-verbose
-
-# Run tests with coverage report
-make test-coverage
-```
-
-### Step 3: Build and Run Docker Locally
-
-```bash
-# Build Docker image (validates Docker build works locally)
-make docker-build
-
-# Run the Chalice API in Docker (production-like environment)
-make docker-run
-```
-
-The API will be available at `http://localhost:8000`
-
-**Test the API:**
-```bash
-curl http://localhost:8000/
-```
-
-### Step 4: Test the Website (Optional)
-
-Test the frontend with your production API:
-
-```bash
-# Terminal 1: Start local web server
-cd website
-python -m http.server 8001
-
-# Terminal 2: Open browser to
-http://localhost:8001/index.html
-```
-
-**Why HTTP server is needed:**
-- ❌ Opening `index.html` directly (file://) blocks API requests for security
-- ✅ HTTP server (http://localhost:8001) allows cross-origin requests
-- The production API has CORS enabled, so it accepts requests from localhost
-
-**What the website does:**
-1. Upload an image to S3
-2. Detect text in the image (AWS Rekognition)
-3. Translate detected text (AWS Translate)
-4. Display translated results
-
-### Step 5: Push to GitHub (Triggers CI/CD)
-
-```bash
-git push origin main
-```
-
-CI/CD will:
-- ✅ Run tests automatically
-- ✅ Build Docker image in clean Linux environment  
-- ✅ Run security scans
-- ✅ Report results on GitHub
-
-## Project Structure
+## Project structure
 
 ```
 .
-├── Capabilities/
-│   ├── app.py                    # Main Chalice application
-│   ├── chalicelib/               # Service implementations
-│   │   ├── polly_service.py      # Text-to-speech service
-│   │   ├── translation_service.py # Translation service
-│   │   ├── recognition_service.py # Image Recognition service
-│   │   └── storage_service.py    # S3 storage service
-│   └── requirements.txt
-├── testing/
-│   ├── utest_translation.py      # Unit tests
-│   └── [service implementations]
-├── anmol_filesupload.py          # File upload script
-└── Makefile                      # Build automation
+├── Capabilities/                  # Backend (Chalice on AWS Lambda)
+│   ├── app.py                     # Routes and the require_auth decorator
+│   ├── chalicelib/
+│   │   ├── auth_service.py        # Verifies Clerk tokens against the JWKS endpoint
+│   │   ├── storage_service.py     # S3 upload and key generation
+│   │   ├── recognition_service.py # Rekognition text detection
+│   │   ├── translation_service.py # Translate
+│   │   ├── polly_service.py       # Polly text-to-speech
+│   │   └── aws_config.py          # Region setting
+│   └── .chalice/                  # Stage config and IAM policy for the Lambda
+├── website/                       # Frontend (static HTML, CSS, JavaScript)
+│   ├── index.html                 # Landing page (signed out) and app (signed in)
+│   ├── scripts.js                 # Clerk sign-in, upload, translate, listen
+│   ├── styles.css                 # App styles
+│   └── demo.mp4                   # Demo video for the landing page
+├── testing/                       # Unit tests and service copies used by the tests
+├── testimage/                     # Sample images
+├── ARCHITECTURE.md
+├── PRODUCTION_SETUP.md
+├── Dockerfile
+├── Makefile
+└── .github/workflows/ci.yml
 ```
 
-## AWS Services Used
+## Local development
 
-- **AWS S3**: File storage
-- **AWS Translate**: Text translation
-- **AWS Polly**: Text-to-speech conversion
-- **AWS Rekognition**: Image/speech recognition
+### Prerequisites
 
-## Docker
+- Python 3.11+
+- AWS credentials with access to S3, Rekognition, Translate, and Polly
+- Docker (optional, for the container build)
 
-Build and run the application in a Docker container:
+### Install and test
 
 ```bash
-# Build Docker image (includes running tests)
-make docker-build
-
-# Run the Chalice API in Docker with AWS credentials
-docker run -it --rm \
-  -e AWS_ACCESS_KEY_ID=your_key \
-  -e AWS_SECRET_ACCESS_KEY=your_secret \
-  -e AWS_REGION=us-east-1 \
-  -p 8000:8000 \
-  anmol-assignment1:latest
+make install     # installs root, Capabilities, and test requirements
+make test        # runs unit tests against live AWS services
 ```
 
-The API will be available at `http://localhost:8000`
+The tests call Translate and Polly directly, so they need working AWS credentials.
 
-**Using make:**
-```bash
-# Run with local AWS credentials
-make docker-run
-```
-
-## Deploying to Production
-
-### Deploy to AWS Lambda
+### Run the backend
 
 ```bash
 cd Capabilities
-chalice deploy
+chalice local    # serves on http://localhost:8000
 ```
 
-Your production URL:                                                                                                                                     https://v9c90wf7fj.execute-api.us-east-1.amazonaws.com/api/
+Requests without a token return `401`. To test the full flow, sign in with Clerk and send the token with each request.
 
-This will:
-- 📦 Package your application
-- ☁️ Create AWS Lambda functions
-- 🌐 Set up API Gateway endpoints
-- 🚀 Deploy to AWS
+### Run the frontend
 
-Chalice will output your API URL. You can then access it from anywhere!
+```bash
+cd website
+python3 -m http.server 8080
+```
 
-### Before Deploying
+Open http://localhost:8080. The page calls the API set in `serverUrl` in `scripts.js`, which is the deployed API by default. Change it to `http://localhost:8000` to test against `chalice local`.
 
-1. ✅ Tests pass locally: `make test`
-2. ✅ Docker builds locally: `make docker-build`
-3. ✅ GitHub Actions CI/CD passes (all checks green)
-4. ✅ AWS credentials configured: `aws configure`
+## Deployment
 
-## CI/CD Pipeline
+### Backend
 
-This project uses GitHub Actions for continuous integration with:
-- Automated test execution
-- Code quality checks (pylint, black, isort)
-- Security scanning (bandit, safety)
-- Multi-stage Docker build (tests run during build)
-- Coverage reporting
+```bash
+cd Capabilities
+chalice deploy --stage dev
+```
 
-See `.github/workflows/ci.yml` for workflow configuration.
+Chalice prints the API URL. Update `serverUrl` in `website/scripts.js` if it changes.
 
-**How it works:**
-1. Push code → GitHub Actions runs automatically
-2. Tests fail → Build stops, you fix it
-3. Tests pass → Docker image built successfully
-4. All checks pass → Ready to deploy
+The Lambda's permissions come from `Capabilities/.chalice/policy-dev.json`. The S3 bucket name is set in `storage_location` in `Capabilities/app.py`. Bucket names are globally unique, so change this when you deploy to a new account.
 
-## Make Targets
+### Frontend
 
-- `make help` - Display all available targets
-- `make install` - Install dependencies
-- `make test` - Run tests
-- `make test-verbose` - Run tests with verbose output
-- `make test-coverage` - Run tests with coverage report
-- `make lint` - Run linting checks
-- `make format` - Format code with black
-- `make clean` - Clean build artifacts
-- `make docker-build` - Build Docker image
-- `make docker-run` - Run application in Docker
+The site is hosted on AWS Amplify. The live site is a manual upload of the `website/` files. To update it, upload the files again, or connect the repository to Amplify in the console for automatic builds.
+
+## Authentication
+
+Clerk handles sign-in. The backend checks each token's signature against Clerk's public keys (`CLERK_JWKS_URL` in `Capabilities/.chalice/config.json`). Access is limited by Clerk's sign-up settings: sign-ups are restricted and users need an invitation.
+
+## Known limits
+
+- No per-user rate limits. Anyone signed in can make as many calls as they like.
+- No file size limit on uploads.
+- Pre-signed image links are valid for one hour and work for anyone who has them.
+- CORS allows all origins.
+- `app.debug` is set to `True` in `app.py`.
+
+## Make targets
+
+- `make install`: install dependencies
+- `make test`: run unit tests
+- `make test-verbose`: run tests with verbose output
+- `make test-coverage`: run tests with a coverage report
+- `make lint`: run pylint
+- `make format`: format code with black
+- `make clean`: remove build artifacts
+- `make docker-build`: build the Docker image
+- `make docker-run`: run the API in Docker
+
+## CI/CD
+
+GitHub Actions runs on every push and pull request. It runs the tests, checks formatting and lint, runs security scans (bandit and safety), and builds the Docker image. See `.github/workflows/ci.yml`.
 
 ## License
 

@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Frontend**: Static HTML/JS hosted on AWS Amplify
 - **Backend**: Python Chalice serverless API on AWS Lambda
 - **Authentication**: Clerk OAuth (added May 2026) gates both API endpoints
-- **AWS Services**: S3 (storage), Rekognition (text detection), Translate (translation), Polly (text-to-speech)
+- **AWS Services**: S3 (storage), Rekognition (text detection), Translate (translation). Polly (text-to-speech) has a service module and tests but is not wired into any route yet
 
 ## Architecture
 
@@ -34,18 +34,22 @@ Browser (Clerk Login) → Amplify Frontend (HTML/JS) → API Gateway → Lambda 
 
 ### Install dependencies
 ```bash
-cd Capabilities
-pip install -r requirements.txt
+# From the repo root: installs root, Capabilities/ and test requirements
+make install
 ```
 
 ### Local testing
 ```bash
-# Run tests
+# Run unit tests (live AWS calls, so AWS credentials must be configured)
 make test
 
-# Start Chalice dev server
-chalice local
+# Start Chalice dev server (serves on http://localhost:8000)
+cd Capabilities && chalice local
 ```
+
+Tests live in `testing/` (`utest_translation.py`) and import the service modules from there. `testing/` keeps its own copies of the service files; `Capabilities/chalicelib/` is the deployed code.
+
+Other targets: `make lint` (pylint), `make format` (black), `make test-coverage`, `make docker-build` / `make docker-run`.
 
 ### Frontend testing
 ```bash
@@ -62,8 +66,16 @@ python -m http.server 8080
 - `chalicelib/storage_service.py` — S3 upload wrapper
 - `chalicelib/recognition_service.py` — Rekognition text detection
 - `chalicelib/translation_service.py` — Translate service
+- `chalicelib/polly_service.py` — Polly text-to-speech (not yet used by `app.py`)
+- `chalicelib/aws_config.py` — Shared `AWS_REGION` (env var, default `us-east-1`)
 - `.chalice/config.json` — Includes `CLERK_JWKS_URL` env var pointing to Clerk's JWKS endpoint
 - `requirements.txt` — Includes PyJWT, cryptography, requests (added for Clerk)
+
+**Other notes:**
+- The S3 bucket is hardcoded in `app.py` (`storage_location`), not read from config.
+- `translate_image_text` only translates lines with Rekognition confidence >= 80.
+- `app.debug = True` is set in `app.py`.
+- `auth_service.verify_token` fetches the JWKS on every request (no caching) and does not check issuer or audience claims.
 
 **Authentication decorator** (app.py):
 ```python
@@ -84,7 +96,7 @@ Applied to: `upload_image()` and `translate_image_text()`.
 ## Frontend Code Structure
 
 **Static HTML/JS** (`website/`):
-- `index.html` — Includes Clerk script tag, Sign In button, app content (hidden until authenticated)
+- `index.html` — Single page. Signed-out visitors see the landing content (mounted in a shadow root on `#authContainer`, so app styles don't reach it; the markup and styles live in `#landing-template`); signed-in users see the app (`#appContainer`). Includes the Clerk script tag. Sign In and Get Started buttons (`data-sign-in`) call Clerk, which returns to the same page after sign-in
 - `scripts.js` — Clerk initialization, token retrieval, API calls with Bearer token
 
 **Clerk integration** (scripts.js):
@@ -100,7 +112,7 @@ Applied to: `upload_image()` and `translate_image_text()`.
 ## Deployment
 
 ### Stages
-- **`dev` stage** (production): API Gateway endpoint `https://v9c90wf7fj.execute-api.us-east-1.amazonaws.com/api/` with Clerk auth required
+- **`dev` stage** (production): API Gateway endpoint `https://daouy3bkla.execute-api.us-east-1.amazonaws.com/api/` with Clerk auth required (account `545009864085`, profile `anmol-shrestha`)
 - Previous `test-auth` stage deleted after promotion to production
 
 ### Deploy backend changes
@@ -144,6 +156,8 @@ curl -X POST http://localhost:8000/images \
 2. Sign in via Clerk (uses test keys)
 3. Open DevTools Network tab, upload an image
 4. Inspect the `/images` request → verify `Authorization: Bearer ...` header is present
+
+**Note:** `website/scripts.js` hardcodes `serverUrl` to the deployed API Gateway (`https://v9c90wf7fj.execute-api.us-east-1.amazonaws.com/api`). Running the frontend locally therefore calls the production API, not `chalice local`. To hit the local server, change `serverUrl` temporarily.
 
 ### Deploy after code changes
 ```bash
